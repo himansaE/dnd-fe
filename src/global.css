@@ -143,4 +143,41 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Custom scrollbar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) rgba(9, 0, 10, 0.6);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(9, 0, 10, 0.6);
+    border-radius: 6px;
+    margin: 4px;
+    box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.8);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+      to bottom,
+      var(--gradient-btn-start),
+      var(--gradient-btn-end)
+    );
+    border-radius: 6px;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #f0d4ff, var(--primary));
+    box-shadow: 0 0 4px #e6c2fe;
+  }
+
+  /* Scrollbar corner styling */
+  .custom-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
