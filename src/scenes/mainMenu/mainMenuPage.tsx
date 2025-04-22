@@ -20,7 +20,7 @@ export const MainMenuPage = () => {
     },
     {
       label: "Settings",
-      action: () => console.log("Settings"),
+      action: () => navigate("/settings"),
     },
     {
       label: "Log Out",

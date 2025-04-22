@@ -25,7 +25,7 @@ const StoryDetailPage = () => {
 
     // Simulate a loading period, then navigate to adventure page
     setTimeout(() => {
-      navigate("/story/adventure");
+      navigate("/story/play");
     }, 1500);
   };
 
@@ -93,19 +93,11 @@ const StoryDetailPage = () => {
 
         {/* Fixed buttons area */}
         <div className="flex justify-between p-6 border-t border-gray-700 ">
-          <Button
-            onClick={handleBack}
-            variant="outline"
-            className="text-gray-700 cursor-pointer"
-          >
+          <Button onClick={handleBack} variant="outline">
             Back to Selection
           </Button>
 
-          <Button
-            onClick={handleStartAdventure}
-            disabled={isStartingAdventure}
-            className="bg-amber-600 hover:bg-amber-700 hover:scale-105 transition-transform duration-300 ease-in-out"
-          >
+          <Button onClick={handleStartAdventure} disabled={isStartingAdventure}>
             {isStartingAdventure ? "Starting Adventure..." : "Start Adventure"}
           </Button>
         </div>

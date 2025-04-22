@@ -4,6 +4,7 @@ import FallbackPage from "../scenes/fallback";
 import { LoadingScene } from "../scenes/loading/loading";
 import { storyRoutes } from "./story.route";
 import { MainMenuPage } from "@/scenes/mainMenu/mainMenuPage";
+import { SettingsPage } from "@/scenes/settings/settingsPage";
 
 export const routes = [
   {
@@ -19,7 +20,10 @@ export const routes = [
     path: "/loading",
     Component: LoadingScene,
   },
-
+  {
+    path: "/settings",
+    Component: SettingsPage,
+  },
   {
     path: "/story",
     children: storyRoutes,
