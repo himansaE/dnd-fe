@@ -3,8 +3,11 @@ import { ChatDialogWindow } from "./dialogWindow";
 import placeholderMale from "@/assets/images/placeholder-male.png";
 import placeholderFemale from "@/assets/images/placeholder-female.png";
 import { useEffect, useState } from "react";
-import { SingleSegmentOutput, StoryGraph } from "@/lib/endpoints/storyStart";
+import { SingleSegmentOutput, StoryGraph } from "@/lib/endpoints/story";
 import { OptionDialog } from "./optionDialog";
+import { storyService } from "@/lib/storyStore";
+import { useContinueStory } from "@/lib/hooks/useContinueStory";
+import { useStoryStore } from "@/stores/storyStore";
 
 type PlaySceneProps = {
   story: StoryGraph;
@@ -16,11 +19,24 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
     story.segments[story.start_segment_id]
   );
   const [narrativeIndex, setNarrativeIndex] = useState(0);
-
   const [showChoices, setShowChoices] = useState(false);
 
+  // Get story continuation functionality
+  const continueStoryMutation = useContinueStory();
+  const selectedStory = useStoryStore((state) => state.selectedStory);
+
+  // Initialize flow and history with the starting segment once on mount
+  useEffect(() => {
+    storyService.setFlowHistory([story.start_segment_id]);
+    storyService.addSegmentToHistory(story.start_segment_id);
+  }, [story.start_segment_id]);
+
+  // Combined loading state from the mutation
+  const isLoading = continueStoryMutation.isPending;
+  const continueStoryError = continueStoryMutation.error?.message || null;
+
   const onNextCLick = () => {
-    if (showChoices) return;
+    if (showChoices || isLoading) return;
     if (narrativeIndex < loadedSegments.narrative_content.length - 1) {
       setNarrativeIndex(narrativeIndex + 1);
     } else {
@@ -28,23 +44,60 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
     }
   };
 
-  const onSelectOption = (option: string) => {
-    const isSegmentLoaded = Object.keys(story.segments).includes(option);
+  const onSelectOption = async (option: string) => {
+    // Check if the segment is already loaded locally
+    const isSegmentLoaded = storyService.getSegment(option);
 
-    if (!isSegmentLoaded) {
-      alert("This segment is not loaded yet.");
+    // Find the selected choice
+    const selectedChoice = loadedSegments.choices.find(
+      (choice) => choice.next_segment_id === option
+    );
+
+    if (!selectedChoice) {
+      console.error("Invalid choice selected");
       return;
     }
 
-    const nextSegmentId = loadedSegments.choices.find(
-      (choice) => choice.next_segment_id === option
-    )?.next_segment_id;
+    // Close the dialog immediately when a choice is selected
+    setShowChoices(false);
 
-    if (nextSegmentId) {
-      setLoadedSegments(story.segments[nextSegmentId]);
-      setCurrentSceneId(nextSegmentId);
+    if (!isSegmentLoaded) {
+      // Segment not loaded, need to call continue story API
+      if (!selectedStory) {
+        console.error("No selected story available for continuation");
+        return;
+      }
+
+      try {
+        const result = await continueStoryMutation.mutateAsync({
+          conversationHistory: storyService.getApiMessageHistory(),
+          currentSegmentId: currentSceneId,
+          choiceId: selectedChoice.text, // Using choice text as choice ID
+          nextSegmentId: option,
+        });
+
+        // After successful API call, the new segments are automatically added to storyService
+        // Now we can proceed to load the segment
+        const newSegment = result.segments[option];
+        if (newSegment) {
+          storyService.addSegmentToHistory(option);
+          storyService.addFlowStep(option);
+          setLoadedSegments(newSegment);
+          setCurrentSceneId(option);
+          setNarrativeIndex(0);
+        }
+      } catch (error) {
+        console.error("Failed to continue story:", error);
+        // If there's an error, we might want to show choices again
+        setShowChoices(true);
+      }
+    } else {
+      // Segment already loaded locally
+      storyService.addSegmentToHistory(option);
+      storyService.addFlowStep(option);
+      setLoadedSegments(isSegmentLoaded);
+      setCurrentSceneId(option);
       setNarrativeIndex(0);
-      setShowChoices(false);
     }
   };
 
@@ -57,7 +110,13 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
       onClick={onNextCLick}
     >
       <ChatDialogWindow
-        content={loadedSegments.narrative_content[narrativeIndex]}
+        content={
+          continueStoryError
+            ? { type: "narrator", text: `Error: ${continueStoryError}` }
+            : isLoading
+            ? { type: "narrator", text: "Loading next part of the story..." }
+            : loadedSegments.narrative_content[narrativeIndex]
+        }
       />
 
       <>
@@ -78,6 +137,7 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
         isOpen={showChoices}
         onSelect={onSelectOption}
         options={loadedSegments.choices}
+        disabled={isLoading}
       />
     </div>
   );

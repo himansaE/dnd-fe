@@ -21,8 +21,7 @@ export const StoryGeneratorScreen = (props: StoryGeneratorScreenProps) => {
   // Handle story selection
   const handleStorySelect = (story: storyGeneratorRes) => {
     selectStory(story);
-    // After selecting a story, navigate to the story detail page
-    // We'll implement this page next
+    // Navigate to the story detail page
     navigate("/story/detail");
   };
 

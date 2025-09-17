@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { storyGeneratorRes } from "@/lib/endpoints/storyGenarator";
-import { Character, StoryStartRes } from "@/lib/endpoints/storyStart";
+import { Character, StoryStartRes } from "@/lib/endpoints/story";
 
 // Start scene response type from API
 

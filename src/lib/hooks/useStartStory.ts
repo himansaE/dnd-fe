@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { startScene } from "../endpoints/storyStart";
+import { startScene } from "../endpoints/story";
 import { storyGeneratorRes } from "../endpoints/storyGenarator";
 
 type StoryStartRes = Partial<Omit<storyGeneratorRes, "card_background">>;

@@ -1,9 +1,10 @@
 import { useStoryStore } from "@/stores/storyStore";
 import { Navigate } from "react-router";
 import { useStoryStart } from "@/lib/hooks/useStartStory";
-import { LoadingScene } from "../loading/loading";
 import { useEffect } from "react";
+import { LoadingScene } from "../loading/loading";
 import { PlayScene } from "./PlayScene";
+import { storyService } from "@/lib/storyStore";
 
 export const PlayScenePage = () => {
   const selectedStory = useStoryStore((state) => state.selectedStory);
@@ -22,6 +23,16 @@ export const PlayScenePage = () => {
     if (!storyStartData) return;
 
     setStoryStartData(storyStartData);
+
+    storyService.addSegments(storyStartData.startScene.segments);
+    storyService.addApiMessage(
+      "assistant",
+      JSON.stringify(storyStartData.startScene)
+    );
+
+    return () => {
+      storyService.reset();
+    };
   }, [storyStartData, setStoryStartData]);
 
   if (!selectedStory) return <Navigate to="/story/start" />;

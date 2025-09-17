@@ -6,12 +6,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ChoiceItem } from "@/lib/endpoints/storyStart";
+import { ChoiceItem } from "@/lib/endpoints/story";
 
 type OptionDialogProps = {
   isOpen: boolean;
   options: ChoiceItem[];
   onSelect: (option: string) => void;
+  disabled?: boolean;
 };
 
 export const OptionDialog = (props: OptionDialogProps) => {
@@ -31,6 +32,7 @@ export const OptionDialog = (props: OptionDialogProps) => {
               key={index}
               onClick={() => props.onSelect(option.next_segment_id)}
               className="max-w-3xl whitespace-break-spaces h-auto block leading-normal"
+              disabled={props.disabled}
             >
               {option.text}
             </Button>

@@ -4,9 +4,11 @@ import Logo from "@/assets/images/logo.webp";
 import ElfWorrior from "@/assets/images/dnd-elf.webp";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router";
+import { useClerk } from "@clerk/clerk-react";
 
 export const MainMenuPage = () => {
   const navigate = useNavigate();
+  const { signOut } = useClerk();
 
   const menuOptions = [
     {
@@ -24,7 +26,7 @@ export const MainMenuPage = () => {
     },
     {
       label: "Log Out",
-      action: () => console.log("Exit"),
+      action: () => signOut({ redirectUrl: "/sign-in" }),
     },
   ];
 
