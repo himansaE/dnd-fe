@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import Request from "@/lib/http";
+import { normalizeSegmentsMap } from "@/lib/utils";
 import { SingleSegmentOutput } from "../endpoints/story";
 import { storyService } from "../storyStore";
 
@@ -44,7 +45,8 @@ export const useContinueStory = () => {
     mutationFn: continueStoryAPI,
     onSuccess: (data) => {
       console.log("Story continuation successful:", data);
-      storyService.addSegments(data.segments);
+      const normalized = normalizeSegmentsMap(data.segments);
+      storyService.addSegments(normalized);
       storyService.addApiMessage("assistant", JSON.stringify(data));
     },
     onError: (error: Error) => {

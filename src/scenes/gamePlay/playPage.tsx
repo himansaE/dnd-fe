@@ -3,7 +3,8 @@ import { Navigate } from "react-router";
 import { useStoryStart } from "@/lib/hooks/useStartStory";
 import { useEffect } from "react";
 import { LoadingScene } from "../loading/loading";
-import { PlayScene } from "./PlayScene";
+import { PlayScene } from "./playScene";
+import { normalizeSegmentsMap } from "@/lib/utils";
 import { storyService } from "@/lib/storyStore";
 
 export const PlayScenePage = () => {
@@ -24,7 +25,9 @@ export const PlayScenePage = () => {
 
     setStoryStartData(storyStartData);
 
-    storyService.addSegments(storyStartData.startScene.segments);
+    // Normalize start scene segments (fix character keys, flatten if needed)
+    const normalized = normalizeSegmentsMap(storyStartData.startScene.segments);
+    storyService.addSegments(normalized);
     storyService.addApiMessage(
       "assistant",
       JSON.stringify(storyStartData.startScene)
