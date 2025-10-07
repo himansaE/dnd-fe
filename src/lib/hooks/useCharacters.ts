@@ -63,7 +63,9 @@ export function useUpdateCharacter() {
       data,
     }: {
       id: string;
-      data: Partial<Omit<CharacterDto, "id" | "createdAt" | "updatedAt">>;
+      data: Partial<Omit<CharacterDto, "id" | "createdAt" | "updatedAt">> & {
+        image?: File | null;
+      };
     }) => characterApi.update(id, data),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: characterKeys.detail(res.id) });

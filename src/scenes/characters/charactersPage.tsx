@@ -17,6 +17,7 @@ import {
   RefreshCcw,
   AlertTriangle,
   UserPlus,
+  Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -83,6 +84,8 @@ export default function CharactersPage() {
     description: "",
     ability: "",
   });
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
 
   const {
     data: listData,
@@ -112,6 +115,8 @@ export default function CharactersPage() {
   const openCreate = () => {
     setEditing(null);
     resetForm();
+    setFile(null);
+    setPreview(null);
     setOpen(true);
   };
 
@@ -123,17 +128,21 @@ export default function CharactersPage() {
       description: char.description,
       ability: char.ability,
     });
+    setFile(null);
+    setPreview(char.imageUrl ?? null);
     setOpen(true);
   };
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     if (!form.name.trim() || !form.type.trim()) return; // minimal validation
     if (editing) {
-      updateMutation.mutate({ id: editing.id, data: form });
-    } else {
-      createMutation.mutate(form, {
-        onSuccess: () => setCurrentPage(1),
+      await updateMutation.mutateAsync({
+        id: editing.id,
+        data: { ...form, image: file },
       });
+    } else {
+      await createMutation.mutateAsync({ ...form, image: file });
+      setCurrentPage(1);
     }
     setOpen(false);
   };
@@ -184,64 +193,87 @@ export default function CharactersPage() {
                 CREATE
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-black/80 text-white border-[#9569AE]">
+            <DialogContent className="bg-black/80 text-white border-[#9569AE] border-2 sm:max-w-3xl rounded-2xl shadow-2xl backdrop-blur-md">
               <DialogHeader>
-                <DialogTitle className="text-2xl">
+                <DialogTitle className="text-3xl font-ruslan">
                   {editing ? "Edit Character" : "Create Character"}
                 </DialogTitle>
+                <p className="text-white/70 text-sm font-poppins">
+                  Craft your hero or foe with style. Upload an image and set
+                  their traits.
+                </p>
               </DialogHeader>
-              <div className="grid grid-cols-1 gap-4 font-poppins">
-                <Field
-                  label="Name"
-                  value={form.name}
-                  onChange={(v) => setForm((f) => ({ ...f, name: v }))}
-                />
-                <SelectLabelField label="Type">
-                  <Select
-                    value={form.type}
-                    onValueChange={(v) => setForm((f) => ({ ...f, type: v }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {TYPE_OPTIONS.map((opt) => (
-                          <SelectItem key={opt} value={opt}>
-                            {opt}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </SelectLabelField>
-                <SelectLabelField label="Ability">
-                  <Select
-                    value={form.ability ?? ""}
-                    onValueChange={(v) =>
-                      setForm((f) => ({ ...f, ability: v }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Ability" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {ABILITY_OPTIONS.map((opt) => (
-                          <SelectItem key={opt} value={opt}>
-                            {opt}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </SelectLabelField>
-                <Field
-                  label="Description"
-                  textarea
-                  value={form.description ?? ""}
-                  onChange={(v) => setForm((f) => ({ ...f, description: v }))}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch font-poppins">
+                <div className="flex flex-col gap-4 h-full">
+                  <ImageField
+                    label="Image"
+                    preview={preview}
+                    fullHeight
+                    onFileSelected={(f) => {
+                      setFile(f);
+                      setPreview(
+                        f ? URL.createObjectURL(f) : editing?.imageUrl ?? null
+                      );
+                    }}
+                  />
+                  <p className="text-xs text-white/60">
+                    Tip: Use a portrait-style image with good contrast.
+                    Recommended ratio ~3:4.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-4">
+                  <Field
+                    label="Name"
+                    value={form.name}
+                    onChange={(v) => setForm((f) => ({ ...f, name: v }))}
+                  />
+                  <SelectLabelField label="Type">
+                    <Select
+                      value={form.type}
+                      onValueChange={(v) => setForm((f) => ({ ...f, type: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {TYPE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt} value={opt}>
+                              {opt}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </SelectLabelField>
+                  <SelectLabelField label="Ability">
+                    <Select
+                      value={form.ability ?? ""}
+                      onValueChange={(v) =>
+                        setForm((f) => ({ ...f, ability: v }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Ability" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {ABILITY_OPTIONS.map((opt) => (
+                            <SelectItem key={opt} value={opt}>
+                              {opt}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </SelectLabelField>
+                  <Field
+                    label="Description"
+                    textarea
+                    value={form.description ?? ""}
+                    onChange={(v) => setForm((f) => ({ ...f, description: v }))}
+                  />
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>
@@ -398,6 +430,52 @@ function SelectLabelField({
   );
 }
 
+function ImageField({
+  label,
+  preview,
+  onFileSelected,
+  fullHeight,
+}: {
+  label: string;
+  preview: string | null;
+  onFileSelected: (file: File | null) => void;
+  fullHeight?: boolean;
+}) {
+  return (
+    <div
+      className={cn("flex flex-col gap-2 text-white", fullHeight && "h-full")}
+    >
+      <span className="text-sm opacity-90 font-poppins">{label}</span>
+      {preview ? (
+        <div
+          className={cn(
+            "w-full rounded-xl border border-[#9361B0] bg-cover bg-center",
+            fullHeight ? "flex-1 min-h-[200px]" : "h-40"
+          )}
+          style={{ backgroundImage: `url(${preview})` }}
+        />
+      ) : (
+        <div
+          className={cn(
+            "w-full rounded-xl border border-[#9361B0] bg-black/30 flex items-center justify-center text-white/60",
+            fullHeight ? "flex-1 min-h-[200px]" : "h-40"
+          )}
+        >
+          <span className="inline-flex items-center gap-2">
+            <ImageIcon className="opacity-70" /> No image selected
+          </span>
+        </div>
+      )}
+      <input
+        type="file"
+        accept="image/*"
+        className="bg-black/40 border border-[#9361B0] rounded-xl p-2 outline-none focus:ring-2 focus:ring-[#a15ad0] text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-[#9361B0] file:text-white hover:file:bg-[#a15ad0] cursor-pointer"
+        onChange={(e) => onFileSelected(e.target.files?.[0] ?? null)}
+      />
+    </div>
+  );
+}
+
 function CharacterCard({
   c,
   onEdit,
@@ -440,8 +518,11 @@ function CharacterCard({
       <div
         className={cn(
           "h-[430px] rounded-2xl max-w-[320px] w-full p-4 flex flex-col shadow-lg transition-transform duration-300 ease-in-out",
-          "hover:scale-105 hover:shadow-2xl text-white relative border-gradient-btn-end border-3 overflow-hidden bg-[#1a0f21]/70"
+          "hover:scale-105 hover:shadow-2xl text-white relative border-gradient-btn-end border-3 overflow-hidden bg-[#1a0f21]/70 bg-cover bg-center"
         )}
+        style={
+          c.imageUrl ? { backgroundImage: `url(${c.imageUrl})` } : undefined
+        }
       >
         <div className="relative z-10 mt-auto">
           <h3 className="text-2xl font-bold">{c.name}</h3>
