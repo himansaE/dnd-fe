@@ -2,10 +2,16 @@ import { useStoryGenerator } from "@/lib/hooks/useStoryGenerator";
 import { useState, useRef, useEffect } from "react";
 import { StartingScene } from "../loading/starting";
 import { StoryGeneratorScreen } from "./storyGeneratorScreen";
+import { useStoryStore } from "@/stores/storyStore";
 
 const StoryGeneratorPage = () => {
   const [progress, setProgress] = useState(0);
   const intervalRef = useRef<number | null>(null);
+
+  // Access our Zustand store
+  const setAvailableStories = useStoryStore(
+    (state) => state.setAvailableStories
+  );
 
   const {
     data: storyGeneratorData,
@@ -15,6 +21,13 @@ const StoryGeneratorPage = () => {
     isFetching: isStoryGeneratorFetching,
     isPending: isStoryGeneratorPending,
   } = useStoryGenerator();
+
+  // Save stories to store when data is available
+  useEffect(() => {
+    if (storyGeneratorData) {
+      setAvailableStories(storyGeneratorData);
+    }
+  }, [storyGeneratorData, setAvailableStories]);
 
   const startProgressSimulation = () => {
     console.log("Starting simulation...");

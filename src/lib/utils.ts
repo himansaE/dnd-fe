@@ -46,3 +46,44 @@ export const joinUrl = (...urlParts: string[]): string => {
 export const getBucketUrl = (fileName: string) => {
   return `${import.meta.env.VITE_S3_BUCKET_URL}/${fileName}`;
 };
+
+// --- Story normalization helpers ---
+type NarrativeItem =
+  | { type: "narrator"; text: string }
+  | { type: "character"; name: string; dialogue: string };
+
+export const normalizeNarrativeItem = (item: any): NarrativeItem => {
+  if (!item || typeof item !== "object") {
+    return { type: "narrator", text: "" };
+  }
+  if (item.type === "character") {
+    const name = item.name ?? item.speaker ?? "";
+    const dialogue = item.dialogue ?? item.text ?? "";
+    return { type: "character", name, dialogue };
+  }
+  // default to narrator
+  const text = item.text ?? item.dialogue ?? "";
+  return { type: "narrator", text };
+};
+
+export const normalizeSegment = (segment: any) => {
+  const narrative = Array.isArray(segment?.narrative_content)
+    ? segment.narrative_content.map(normalizeNarrativeItem)
+    : [];
+  const choices = Array.isArray(segment?.choices)
+    ? segment.choices.map((c: any) => ({
+        text: String(c?.text ?? ""),
+        next_segment_id: String(c?.next_segment_id ?? ""),
+      }))
+    : [];
+  return { narrative_content: narrative, choices };
+};
+
+export const normalizeSegmentsMap = (segments: any) => {
+  const map = segments?.segments ?? segments ?? {};
+  const result: Record<string, any> = {};
+  Object.keys(map).forEach((key) => {
+    result[key] = normalizeSegment(map[key]);
+  });
+  return result;
+};
