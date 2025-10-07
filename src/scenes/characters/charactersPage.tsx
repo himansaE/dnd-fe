@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useCallback, useEffect, memo } from "react";
 import {
   Pencil,
   Trash2,
@@ -109,18 +109,45 @@ export default function CharactersPage() {
     updateMutation.isPending ||
     deleteMutation.isPending;
 
-  const resetForm = () =>
-    setForm({ name: "", type: "", description: "", ability: "" });
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
-  const openCreate = () => {
+  // Cleanup preview URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
+
+  const resetForm = useCallback(() => {
+    setForm({ name: "", type: "", description: "", ability: "" });
+  }, []);
+
+  const openCreate = useCallback(() => {
+    // Cleanup any existing blob URL before opening create
+    setPreview((currentPreview) => {
+      if (currentPreview && currentPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(currentPreview);
+      }
+      return null;
+    });
+
     setEditing(null);
     resetForm();
     setFile(null);
-    setPreview(null);
     setOpen(true);
-  };
+  }, [resetForm]);
 
-  const openEdit = (char: CharacterDto) => {
+  const openEdit = useCallback((char: CharacterDto) => {
+    // Cleanup any existing blob URL before opening edit
+    setPreview((currentPreview) => {
+      if (currentPreview && currentPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(currentPreview);
+      }
+      return char.imageUrl ?? null;
+    });
+
     setEditing(char);
     setForm({
       name: char.name,
@@ -129,11 +156,10 @@ export default function CharactersPage() {
       ability: char.ability,
     });
     setFile(null);
-    setPreview(char.imageUrl ?? null);
     setOpen(true);
-  };
+  }, []);
 
-  const onSubmit = async () => {
+  const onSubmit = useCallback(async () => {
     if (!form.name.trim() || !form.type.trim()) return; // minimal validation
     if (editing) {
       await updateMutation.mutateAsync({
@@ -144,24 +170,85 @@ export default function CharactersPage() {
       await createMutation.mutateAsync({ ...form, image: file });
       setCurrentPage(1);
     }
-    setOpen(false);
-  };
 
-  const onRequestDelete = (id: string, name: string) => {
+    // Cleanup blob URL after successful submit
+    setPreview((currentPreview) => {
+      if (currentPreview && currentPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(currentPreview);
+      }
+      return null;
+    });
+
+    setOpen(false);
+  }, [form, file, editing, updateMutation, createMutation]);
+
+  const onRequestDelete = useCallback((id: string, name: string) => {
     setPendingDeleteId(id);
     setPendingDeleteName(name);
     setConfirmOpen(true);
-  };
+  }, []);
 
-  const onConfirmDelete = () => {
+  const onConfirmDelete = useCallback(() => {
     if (pendingDeleteId) deleteMutation.mutate(pendingDeleteId);
     setConfirmOpen(false);
     setPendingDeleteId(null);
     setPendingDeleteName("");
-  };
+  }, [pendingDeleteId, deleteMutation]);
 
-  const goPrev = () => setCurrentPage((p) => Math.max(1, p - 1));
-  const goNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
+  const goPrev = useCallback(
+    () => setCurrentPage((p) => Math.max(1, p - 1)),
+    []
+  );
+  const goNext = useCallback(
+    () => setCurrentPage((p) => Math.min(totalPages, p + 1)),
+    [totalPages]
+  );
+
+  const handleDialogOpenChange = useCallback(
+    (isOpen: boolean) => {
+      // Prevent closing while saving
+      if (!isOpen && isSaving) return;
+      setOpen(isOpen);
+    },
+    [isSaving]
+  );
+
+  const handleFileSelected = useCallback((f: File | null) => {
+    setFile(f);
+
+    // Use functional state update to avoid dependency on preview
+    setPreview((currentPreview) => {
+      // Cleanup old preview URL if it's a blob
+      if (currentPreview && currentPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(currentPreview);
+      }
+
+      if (f) {
+        return URL.createObjectURL(f);
+      } else {
+        // Fall back to editing image URL or null
+        return null;
+      }
+    });
+  }, []);
+
+  const handleFormChange = useCallback(
+    (field: keyof CharacterDraft, value: string) => {
+      setForm((f) => ({ ...f, [field]: value }));
+    },
+    []
+  );
+
+  const handleCancelClick = useCallback(() => {
+    // Cleanup blob URL when closing
+    setPreview((currentPreview) => {
+      if (currentPreview && currentPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(currentPreview);
+      }
+      return null;
+    });
+    setOpen(false);
+  }, []);
 
   return (
     <div
@@ -184,7 +271,7 @@ export default function CharactersPage() {
           <h1 className="text-4xl text-white font-bold font-ruslan">
             Characters
           </h1>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
               <Button
                 onClick={openCreate}
@@ -203,18 +290,28 @@ export default function CharactersPage() {
                   their traits.
                 </p>
               </DialogHeader>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch font-poppins">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch font-poppins relative">
+                {isSaving && (
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="p-3 bg-black/40 rounded-full animate-spin">
+                        <RefreshCcw size="24" color="white" />
+                      </div>
+                      <p className="text-white font-poppins text-sm">
+                        {editing
+                          ? "Updating character..."
+                          : "Creating character..."}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-col gap-4 h-full">
                   <ImageField
                     label="Image"
                     preview={preview}
                     fullHeight
-                    onFileSelected={(f) => {
-                      setFile(f);
-                      setPreview(
-                        f ? URL.createObjectURL(f) : editing?.imageUrl ?? null
-                      );
-                    }}
+                    disabled={isSaving}
+                    onFileSelected={handleFileSelected}
                   />
                   <p className="text-xs text-white/60">
                     Tip: Use a portrait-style image with good contrast.
@@ -225,12 +322,14 @@ export default function CharactersPage() {
                   <Field
                     label="Name"
                     value={form.name}
-                    onChange={(v) => setForm((f) => ({ ...f, name: v }))}
+                    disabled={isSaving}
+                    onChange={(v) => handleFormChange("name", v)}
                   />
                   <SelectLabelField label="Type">
                     <Select
                       value={form.type}
-                      onValueChange={(v) => setForm((f) => ({ ...f, type: v }))}
+                      disabled={isSaving}
+                      onValueChange={(v) => handleFormChange("type", v)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select Type" />
@@ -249,9 +348,8 @@ export default function CharactersPage() {
                   <SelectLabelField label="Ability">
                     <Select
                       value={form.ability ?? ""}
-                      onValueChange={(v) =>
-                        setForm((f) => ({ ...f, ability: v }))
-                      }
+                      disabled={isSaving}
+                      onValueChange={(v) => handleFormChange("ability", v)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select Ability" />
@@ -270,17 +368,32 @@ export default function CharactersPage() {
                   <Field
                     label="Description"
                     textarea
+                    disabled={isSaving}
                     value={form.description ?? ""}
-                    onChange={(v) => setForm((f) => ({ ...f, description: v }))}
+                    onChange={(v) => handleFormChange("description", v)}
                   />
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={handleCancelClick}
+                  disabled={isSaving}
+                >
                   Cancel
                 </Button>
-                <Button onClick={onSubmit}>
-                  {editing ? "Save" : "Create"}
+                <Button
+                  onClick={onSubmit}
+                  disabled={isSaving || !form.name.trim() || !form.type.trim()}
+                >
+                  {isSaving ? (
+                    <span className="flex items-center gap-2">
+                      <RefreshCcw size="16" className="animate-spin" />
+                      {editing ? "Saving..." : "Creating..."}
+                    </span>
+                  ) : (
+                    <span>{editing ? "Save" : "Create"}</span>
+                  )}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -382,40 +495,44 @@ export default function CharactersPage() {
   );
 }
 
-function Field({
+const Field = memo(function Field({
   label,
   value,
   onChange,
   textarea,
+  disabled,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   textarea?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <label className="flex flex-col gap-2 text-white">
       <span className="text-sm opacity-90 font-poppins">{label}</span>
       {textarea ? (
         <textarea
-          className="bg-black/40 border border-[#9361B0] rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#a15ad0] text-white placeholder:text-white/50 min-h-28"
+          className="bg-black/40 border border-[#9361B0] rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#a15ad0] text-white placeholder:text-white/50 min-h-28 disabled:opacity-50 disabled:cursor-not-allowed"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={label}
+          disabled={disabled}
         />
       ) : (
         <input
-          className="bg-black/40 border border-[#9361B0] rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#a15ad0] text-white placeholder:text-white/50"
+          className="bg-black/40 border border-[#9361B0] rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#a15ad0] text-white placeholder:text-white/50 disabled:opacity-50 disabled:cursor-not-allowed"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={label}
+          disabled={disabled}
         />
       )}
     </label>
   );
-}
+});
 
-function SelectLabelField({
+const SelectLabelField = memo(function SelectLabelField({
   label,
   children,
 }: {
@@ -428,18 +545,20 @@ function SelectLabelField({
       {children}
     </label>
   );
-}
+});
 
-function ImageField({
+const ImageField = memo(function ImageField({
   label,
   preview,
   onFileSelected,
   fullHeight,
+  disabled,
 }: {
   label: string;
   preview: string | null;
   onFileSelected: (file: File | null) => void;
   fullHeight?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <div
@@ -450,7 +569,8 @@ function ImageField({
         <div
           className={cn(
             "w-full rounded-xl border border-[#9361B0] bg-cover bg-center",
-            fullHeight ? "flex-1 min-h-[200px]" : "h-40"
+            fullHeight ? "flex-1 min-h-[200px]" : "h-40",
+            disabled && "opacity-50"
           )}
           style={{ backgroundImage: `url(${preview})` }}
         />
@@ -458,7 +578,8 @@ function ImageField({
         <div
           className={cn(
             "w-full rounded-xl border border-[#9361B0] bg-black/30 flex items-center justify-center text-white/60",
-            fullHeight ? "flex-1 min-h-[200px]" : "h-40"
+            fullHeight ? "flex-1 min-h-[200px]" : "h-40",
+            disabled && "opacity-50"
           )}
         >
           <span className="inline-flex items-center gap-2">
@@ -469,14 +590,15 @@ function ImageField({
       <input
         type="file"
         accept="image/*"
-        className="bg-black/40 border border-[#9361B0] rounded-xl p-2 outline-none focus:ring-2 focus:ring-[#a15ad0] text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-[#9361B0] file:text-white hover:file:bg-[#a15ad0] cursor-pointer"
+        className="bg-black/40 border border-[#9361B0] rounded-xl p-2 outline-none focus:ring-2 focus:ring-[#a15ad0] text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-[#9361B0] file:text-white hover:file:bg-[#a15ad0] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         onChange={(e) => onFileSelected(e.target.files?.[0] ?? null)}
+        disabled={disabled}
       />
     </div>
   );
-}
+});
 
-function CharacterCard({
+const CharacterCard = memo(function CharacterCard({
   c,
   onEdit,
   onDelete,
@@ -544,4 +666,4 @@ function CharacterCard({
       </div>
     </div>
   );
-}
+});

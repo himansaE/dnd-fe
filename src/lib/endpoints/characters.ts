@@ -59,9 +59,7 @@ export const characterApi = {
       if (data.ability) fd.append("ability", data.ability);
       if (data.description) fd.append("description", data.description);
       fd.append("image", (data as any).image);
-      const res = await Request.post<CharacterDto>("/api/characters", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await Request.post<CharacterDto>("/api/characters", fd);
       return res.data;
     }
     const { image, ...json } = data as any;
@@ -81,9 +79,7 @@ export const characterApi = {
       if (data.ability) fd.append("ability", data.ability);
       if (data.description) fd.append("description", data.description);
       fd.append("image", (data as any).image);
-      const res = await Request.put<CharacterDto>(`/api/characters/${id}`, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await Request.put<CharacterDto>(`/api/characters/${id}`, fd);
       return res.data;
     }
     const { image, ...json } = data as any;
