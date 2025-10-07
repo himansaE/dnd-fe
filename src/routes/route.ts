@@ -5,6 +5,7 @@ import { LoadingScene } from "../scenes/loading/loading";
 import { storyRoutes } from "./story.route";
 import { MainMenuPage } from "@/scenes/mainMenu/mainMenuPage";
 import { SettingsPage } from "@/scenes/settings/settingsPage";
+import CharactersPage from "@/scenes/characters/charactersPage";
 
 export const routes = [
   {
@@ -23,6 +24,10 @@ export const routes = [
   {
     path: "/settings",
     Component: SettingsPage,
+  },
+  {
+    path: "/characters",
+    Component: CharactersPage,
   },
   {
     path: "/story",

@@ -16,6 +16,10 @@ export const MainMenuPage = () => {
       action: () => navigate("/story/start", { replace: true }),
     },
     {
+      label: "Characters",
+      action: () => navigate("/characters"),
+    },
+    {
       label: "Load Game",
       action: () => console.log("Load Game"),
       disabled: true,
