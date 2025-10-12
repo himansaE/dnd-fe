@@ -266,7 +266,7 @@ export default function CharactersPage() {
           </div>
         </div>
       )}
-      <div className="w-full max-w-7/9 px-20 pt-16 font-poppins">
+      <div className="w-full max-w-7/9 px-20 pt-8 pb-6 font-poppins grid grid-rows-[100px_1fr] h-screen">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-4xl text-white font-bold font-ruslan">
             Characters
@@ -400,74 +400,90 @@ export default function CharactersPage() {
           </Dialog>
         </div>
 
-        {isError && (
-          <div className="mb-6 bg-black/60 border-[#9569AE] border rounded-lg px-6 py-4 text-white">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="text-amber-400" />
-              <div>
-                <p className="font-semibold">Failed to load characters</p>
-                <p className="text-white/80 text-sm font-poppins">
-                  {String((error as any)?.message ?? "Something went wrong.")}
-                </p>
-              </div>
-              <div className="ml-auto">
-                <Button variant="outline" onClick={() => refetch()}>
-                  Retry
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="w-full px-10 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-          {items.length === 0 && !isError ? (
-            <div className="col-span-full flex items-center justify-center">
-              <div className="bg-black/60 border-[#9569AE] border rounded-lg px-10 py-12 text-white text-center max-w-xl w-full backdrop-blur-sm">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="p-3 bg-black/40 rounded-full border border-[#9361B0]">
-                    <UserPlus className="text-white" />
-                  </div>
+        <div className="overflow-auto scrollbar-custom">
+          {isError && (
+            <div className="mb-6 bg-black/60 border-[#9569AE] border rounded-lg px-6 py-4 text-white">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="text-amber-400" />
+                <div>
+                  <p className="font-semibold">Failed to load characters</p>
+                  <p className="text-white/80 text-sm font-poppins">
+                    {String((error as any)?.message ?? "Something went wrong.")}
+                  </p>
                 </div>
-                <p className="text-lg font-poppins mb-4">No characters yet</p>
-                <p className="text-white/80 text-sm font-poppins mb-6">
-                  Create your first character to start building your adventures.
-                </p>
-                <Button onClick={openCreate} className="font-ruslan">
-                  CREATE
-                </Button>
+                <div className="ml-auto">
+                  <Button variant="outline" onClick={() => refetch()}>
+                    Retry
+                  </Button>
+                </div>
               </div>
             </div>
-          ) : (
-            items.map((c) => (
-              <CharacterCard
-                key={c.id}
-                c={c}
-                onEdit={openEdit}
-                onDelete={() => onRequestDelete(c.id, c.name)}
-              />
-            ))
           )}
+          <div className="w-full px-10 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+            {items.length === 0 && !isError ? (
+              <div className="col-span-full flex items-center justify-center">
+                <div className="bg-black/60 border-[#9569AE] border rounded-lg px-10 py-12 text-white text-center max-w-xl w-full backdrop-blur-sm">
+                  <div className="flex items-center justify-center mb-4">
+                    <div className="p-3 bg-black/40 rounded-full border border-[#9361B0]">
+                      <UserPlus className="text-white" />
+                    </div>
+                  </div>
+                  <p className="text-lg font-poppins mb-4">No characters yet</p>
+                  <p className="text-white/80 text-sm font-poppins mb-6">
+                    Create your first character to start building your
+                    adventures.
+                  </p>
+                  <Button onClick={openCreate} className="font-ruslan">
+                    CREATE
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              items.map((c) => (
+                <CharacterCard
+                  key={c.id}
+                  c={c}
+                  onEdit={openEdit}
+                  onDelete={() => onRequestDelete(c.id, c.name)}
+                />
+              ))
+            )}
+          </div>
         </div>
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-4 mt-6">
-            <Button
-              variant="outline"
+          <div className="flex items-center justify-center gap-4 mt-6 pb-4">
+            <button
               onClick={goPrev}
               disabled={currentPage === 1}
+              className="min-w-[120px] px-5 py-2.5 bg-gradient-to-b from-[#7a3b9e] to-[#5a2b72] rounded-lg border border-[#9361B0] text-white font-poppins text-sm font-medium shadow-md transition-all duration-200 hover:from-[#8e4bb8] hover:to-[#6a3b82] hover:border-[#a15ad0] hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-[#7a3b9e] disabled:hover:to-[#5a2b72]"
             >
-              <ChevronLeft /> Prev
-            </Button>
-            <span className="text-white">
-              Page {currentPage} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
+              <span className="flex items-center justify-center gap-2">
+                <ChevronLeft size={16} />
+                <span>Previous</span>
+              </span>
+            </button>
+
+            <div className="min-w-[100px] px-4 py-2 bg-black/50 rounded-lg border border-[#9361B0]/50 backdrop-blur-sm">
+              <span className="text-white/90 font-poppins text-sm text-center block">
+                Page{" "}
+                <span className="font-semibold text-[#e6c2fe]">
+                  {currentPage}
+                </span>{" "}
+                of {totalPages}
+              </span>
+            </div>
+
+            <button
               onClick={goNext}
               disabled={currentPage === totalPages}
+              className="min-w-[120px] px-5 py-2.5 bg-gradient-to-b from-[#7a3b9e] to-[#5a2b72] rounded-lg border border-[#9361B0] text-white font-poppins text-sm font-medium shadow-md transition-all duration-200 hover:from-[#8e4bb8] hover:to-[#6a3b82] hover:border-[#a15ad0] hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-[#7a3b9e] disabled:hover:to-[#5a2b72]"
             >
-              Next <ChevronRight />
-            </Button>
+              <span className="flex items-center justify-center gap-2">
+                <span>Next</span>
+                <ChevronRight size={16} />
+              </span>
+            </button>
           </div>
         )}
       </div>
@@ -640,7 +656,7 @@ const CharacterCard = memo(function CharacterCard({
       <div
         className={cn(
           "h-[430px] rounded-2xl max-w-[320px] w-full p-4 flex flex-col shadow-lg transition-transform duration-300 ease-in-out",
-          "hover:scale-105 hover:shadow-2xl text-white relative border-gradient-btn-end border-3 overflow-hidden bg-[#1a0f21]/70 bg-cover bg-center"
+          "hover:scale-105 hover:shadow-2xl text-white relative border-gradient-btn-end border-3 overflow-hidden bg-[#3d204e] bg-cover bg-center"
         )}
         style={
           c.imageUrl ? { backgroundImage: `url(${c.imageUrl})` } : undefined

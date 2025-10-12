@@ -20,6 +20,7 @@ export interface NarratorContent {
 
 export interface CharacterContent {
   type: "character";
+  characterId?: string; // Character UUID from database
   name: string;
   dialogue: string;
 }
@@ -55,15 +56,17 @@ export interface StoryStartRes {
 }
 
 export const startScene = async (
-  story: Omit<storyGeneratorRes, "card_background">
+  story: Omit<storyGeneratorRes, "card_background">,
+  characterIds: string[]
 ) => {
   const res = await Request<StoryStartRes>({
-    method: "get",
+    method: "post",
     url: "/api/story/start-scene",
-    params: {
+    data: {
       title: story.title,
       plot: story.plot,
       description: story.hidden_description,
+      characterIds,
     },
   });
 

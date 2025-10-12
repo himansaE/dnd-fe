@@ -2,12 +2,13 @@ import Backdrop from "@/assets/images/play-backdrop.png";
 import { ChatDialogWindow } from "./dialogWindow";
 import placeholderMale from "@/assets/images/placeholder-male.png";
 import placeholderFemale from "@/assets/images/placeholder-female.png";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { SingleSegmentOutput, StoryGraph } from "@/lib/endpoints/story";
 import { OptionDialog } from "./optionDialog";
 import { storyService } from "@/lib/storyStore";
 import { useContinueStory } from "@/lib/hooks/useContinueStory";
 import { useStoryStore } from "@/stores/storyStore";
+import { findCharacterMatch } from "@/lib/utils/characterMatching";
 
 type PlaySceneProps = {
   story: StoryGraph;
@@ -24,6 +25,41 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
   // Get story continuation functionality
   const continueStoryMutation = useContinueStory();
   const selectedStory = useStoryStore((state) => state.selectedStory);
+  const selectedCharacters = useStoryStore((state) => state.selectedCharacters);
+
+  // Combined loading state from the mutation
+  const isLoading = continueStoryMutation.isPending;
+  const continueStoryError = continueStoryMutation.error?.message || null;
+
+  // Get current narrative item
+  const currentNarrative = useMemo(() => {
+    if (continueStoryError) {
+      return {
+        type: "narrator",
+        text: `Error: ${continueStoryError}`,
+      } as const;
+    }
+    if (isLoading) {
+      return {
+        type: "narrator",
+        text: "Loading next part of the story...",
+      } as const;
+    }
+    return loadedSegments.narrative_content[narrativeIndex];
+  }, [narrativeIndex, loadedSegments, isLoading, continueStoryError]);
+
+  // Find character image for current speaker
+  const currentCharacterImage = useMemo(() => {
+    if (currentNarrative.type !== "character") return null;
+
+    const match = findCharacterMatch(
+      selectedCharacters,
+      (currentNarrative as any).characterId,
+      currentNarrative.name
+    );
+
+    return match?.imageUrl ?? null;
+  }, [currentNarrative, selectedCharacters]);
 
   // Initialize flow and history with the starting segment once on mount
   useEffect(() => {
@@ -31,9 +67,16 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
     storyService.addSegmentToHistory(story.start_segment_id);
   }, [story.start_segment_id]);
 
-  // Combined loading state from the mutation
-  const isLoading = continueStoryMutation.isPending;
-  const continueStoryError = continueStoryMutation.error?.message || null;
+  // Preload character images on mount
+  useEffect(() => {
+    console.log("[PlayScene] Preloading character images...");
+    selectedCharacters.forEach((char) => {
+      if (char.imageUrl) {
+        const img = new Image();
+        img.src = char.imageUrl;
+      }
+    });
+  }, [selectedCharacters]);
 
   const onNextCLick = () => {
     if (showChoices || isLoading) return;
@@ -109,22 +152,27 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
       }}
       onClick={onNextCLick}
     >
-      <ChatDialogWindow
-        content={
-          continueStoryError
-            ? { type: "narrator", text: `Error: ${continueStoryError}` }
-            : isLoading
-            ? { type: "narrator", text: "Loading next part of the story..." }
-            : loadedSegments.narrative_content[narrativeIndex]
-        }
-      />
+      <ChatDialogWindow content={currentNarrative} />
 
       <>
-        <img
-          src={placeholderMale}
-          alt="Placeholder male character"
-          className="absolute left-10 bottom-0 w-xl h-xl shadow-lg translate-y-16"
-        />
+        {/* Left side - Character speaking (or narrator placeholder) */}
+        {currentCharacterImage ? (
+          <img
+            src={currentCharacterImage}
+            alt="Speaking character"
+            className="absolute left-10 bottom-0 w-xl h-xl shadow-lg translate-y-16 transition-opacity duration-300"
+            key={currentCharacterImage}
+          />
+        ) : (
+          <img
+            src={placeholderMale}
+            alt="Narrator placeholder"
+            className="absolute left-10 bottom-0 w-xl h-xl shadow-lg translate-y-16"
+          />
+        )}
+        {/* TODO: Replace narrator placeholder with selectable narrator character image */}
+
+        {/* Right side - Keep placeholder */}
         <img
           src={placeholderFemale}
           alt="Placeholder female character"

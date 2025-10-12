@@ -5,25 +5,45 @@ import { Button } from "@/components/ui/button";
 import { getBucketUrl } from "@/lib/utils";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { CharacterSelectionDialog } from "./characterSelectionDialog";
+import { Users } from "lucide-react";
+import type { CharacterDto } from "@/lib/endpoints/characters";
 
 const StoryDetailPage = () => {
   const selectedStory = useStoryStore((state) => state.selectedStory);
+  const selectedCharacters = useStoryStore((state) => state.selectedCharacters);
+  const setSelectedCharacters = useStoryStore(
+    (state) => state.setSelectedCharacters
+  );
   const navigate = useNavigate();
   const [isStartingAdventure, setIsStartingAdventure] = useState(false);
+  const [isCharacterDialogOpen, setIsCharacterDialogOpen] = useState(false);
 
   if (!selectedStory) {
     return <Navigate to="/story/start" />;
   }
 
+  const hasRequiredCharacters = selectedCharacters.length === 10;
+
+  const handleCharacterConfirm = (characters: CharacterDto[]) => {
+    setSelectedCharacters(characters);
+  };
+
   const handleStartAdventure = () => {
+    if (!hasRequiredCharacters) {
+      // Open character selection if not already selected
+      setIsCharacterDialogOpen(true);
+      return;
+    }
+
+    console.log(
+      "[StoryDetailPage] Starting adventure with characters:",
+      selectedCharacters.map((c) => c.name)
+    );
+
     setIsStartingAdventure(true);
 
-    // In a real implementation, you would:
-    // 1. Initialize game state
-    // 2. Set up characters
-    // 3. Navigate to the adventure screen
-
-    // Simulate a loading period, then navigate to adventure page
+    // Navigate to adventure page with selected characters
     setTimeout(() => {
       navigate("/story/play");
     }, 1500);
@@ -91,17 +111,70 @@ const StoryDetailPage = () => {
           </div>
         </div>
 
+        {/* Character Selection Section */}
+        <div className="p-6 border-t border-gray-700">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Users className="text-amber-400" size={20} />
+              <h3 className="text-lg font-semibold font-poppins text-white">
+                Adventure Party
+              </h3>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setIsCharacterDialogOpen(true)}
+              className="font-poppins"
+            >
+              {hasRequiredCharacters
+                ? "Change Characters"
+                : "Select Characters"}
+            </Button>
+          </div>
+          <div className="text-sm font-poppins">
+            {hasRequiredCharacters ? (
+              <div className="flex flex-wrap gap-2">
+                {selectedCharacters.map((char) => (
+                  <span
+                    key={char.id}
+                    className="inline-flex items-center px-2 py-1 bg-gradient-to-r from-[#7a3b9e] to-[#5a2b72] rounded-md border border-[#9361B0] text-white text-xs"
+                  >
+                    {char.name}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-white/60">
+                You need to select 10 characters before starting the adventure.
+              </p>
+            )}
+          </div>
+        </div>
+
         {/* Fixed buttons area */}
         <div className="flex justify-between p-6 border-t border-gray-700 ">
           <Button onClick={handleBack} variant="outline">
             Back to Selection
           </Button>
 
-          <Button onClick={handleStartAdventure} disabled={isStartingAdventure}>
-            {isStartingAdventure ? "Starting Adventure..." : "Start Adventure"}
+          <Button
+            onClick={handleStartAdventure}
+            disabled={isStartingAdventure || !hasRequiredCharacters}
+          >
+            {isStartingAdventure
+              ? "Starting Adventure..."
+              : hasRequiredCharacters
+              ? "Start Adventure"
+              : "Select Characters First"}
           </Button>
         </div>
       </div>
+
+      <CharacterSelectionDialog
+        open={isCharacterDialogOpen}
+        onOpenChange={setIsCharacterDialogOpen}
+        selectedCharacters={selectedCharacters}
+        onConfirm={handleCharacterConfirm}
+      />
     </div>
   );
 };
