@@ -1,7 +1,5 @@
 import Backdrop from "@/assets/images/play-backdrop.png";
 import { ChatDialogWindow } from "./dialogWindow";
-import placeholderMale from "@/assets/images/placeholder-male.png";
-import placeholderFemale from "@/assets/images/placeholder-female.png";
 import { useEffect, useState, useMemo } from "react";
 import { SingleSegmentOutput, StoryGraph } from "@/lib/endpoints/story";
 import { OptionDialog } from "./optionDialog";
@@ -176,32 +174,15 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
     >
       <ChatDialogWindow content={currentNarrative} />
 
-      <>
-        {/* Left side - Character speaking (or narrator placeholder) */}
-        {currentCharacterImage ? (
-          <img
-            src={currentCharacterImage}
-            alt="Speaking character"
-            className="absolute left-10 bottom-0 w-xl h-xl shadow-lg translate-y-16 transition-opacity duration-300"
-            key={currentCharacterImage}
-          />
-        ) : (
-          <img
-            src={placeholderMale}
-            alt="Narrator placeholder"
-            className="absolute left-10 bottom-0 w-xl h-xl shadow-lg translate-y-16"
-          />
-        )}
-        {/* TODO: Replace narrator placeholder with selectable narrator character image */}
-
-        {/* Right side - Keep placeholder */}
+      {/* Character image - only show when a character is speaking */}
+      {currentCharacterImage && (
         <img
-          src={placeholderFemale}
-          alt="Placeholder female character"
-          className="absolute -right-24 bottom-0 w-xl h-xl rounded-full shadow-lg translate-y-12"
+          src={currentCharacterImage}
+          alt="Speaking character"
+          className="absolute left-10 bottom-0 w-xl h-xl shadow-lg translate-y-16 transition-opacity duration-300"
+          key={currentCharacterImage}
         />
-        <div className="absolute bottom-0 left-10 w-lg h-lg text-white text-2xl font-bold translate-y-10"></div>
-      </>
+      )}
 
       <OptionDialog
         isOpen={showChoices}
