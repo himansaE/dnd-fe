@@ -41,7 +41,8 @@ export const PlayScenePage = () => {
   }, [storyStartData, setStoryStartData]);
 
   if (!selectedStory) return <Navigate to="/story/start" />;
-  if (selectedCharacters.length !== 10) return <Navigate to="/story/detail" />;
+  if (selectedCharacters.length < 10 || selectedCharacters.length > 30)
+    return <Navigate to="/story/detail" />;
 
   if (isStoryStartLoading || !storyStartData) return <LoadingScene />;
 

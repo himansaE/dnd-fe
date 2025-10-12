@@ -89,3 +89,16 @@ export function useDeleteCharacter() {
     },
   });
 }
+
+export function useAutoSelectCharacters() {
+  return useMutation({
+    mutationFn: (storyData: {
+      title: string;
+      description: string;
+      plot: string;
+    }) => characterApi.autoSelect(storyData),
+    onError: (err) => {
+      console.error("Auto-select failed:", err);
+    },
+  });
+}

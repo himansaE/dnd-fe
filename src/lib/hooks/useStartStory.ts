@@ -22,7 +22,8 @@ export const useStoryStart = (req: StoryStartRes) => {
       !!req.title &&
       !!req.plot &&
       !!req.hidden_description &&
-      req.characterIds.length === 10,
+      req.characterIds.length >= 10 &&
+      req.characterIds.length <= 30,
     refetchOnWindowFocus: false,
     refetchInterval: 0,
     refetchOnReconnect: false,

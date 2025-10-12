@@ -128,10 +128,32 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
           setLoadedSegments(newSegment);
           setCurrentSceneId(option);
           setNarrativeIndex(0);
+        } else {
+          // CRITICAL: The requested segment ID is missing from the response
+          console.error(
+            `SEGMENT MISSING: Requested segment "${option}" not found in AI response`
+          );
+          console.error(
+            "Available segments:",
+            Object.keys(result.segments ?? {})
+          );
+
+          // Show an error message to the user
+          alert(
+            `Story generation error: The AI failed to generate the requested story segment. Please try a different choice or refresh the page.`
+          );
+
+          // Show choices again so user can try another option
+          setShowChoices(true);
         }
       } catch (error) {
         console.error("Failed to continue story:", error);
-        // If there's an error, we might want to show choices again
+        // If there's an error, show an alert and show choices again
+        alert(
+          `Failed to continue the story: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }. Please try again.`
+        );
         setShowChoices(true);
       }
     } else {

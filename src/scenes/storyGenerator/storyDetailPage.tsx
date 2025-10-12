@@ -6,8 +6,10 @@ import { getBucketUrl } from "@/lib/utils";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { CharacterSelectionDialog } from "./characterSelectionDialog";
-import { Users } from "lucide-react";
+import { AutoSelectModal } from "./autoSelectModal";
+import { Users, Sparkles } from "lucide-react";
 import type { CharacterDto } from "@/lib/endpoints/characters";
+import { useAutoSelectCharacters } from "@/lib/hooks/useCharacters";
 
 const StoryDetailPage = () => {
   const selectedStory = useStoryStore((state) => state.selectedStory);
@@ -18,15 +20,71 @@ const StoryDetailPage = () => {
   const navigate = useNavigate();
   const [isStartingAdventure, setIsStartingAdventure] = useState(false);
   const [isCharacterDialogOpen, setIsCharacterDialogOpen] = useState(false);
+  const [isAutoSelectModalOpen, setIsAutoSelectModalOpen] = useState(false);
+  const [autoSelectResult, setAutoSelectResult] = useState<{
+    characters: CharacterDto[];
+    analysis: any[];
+    strategy: string;
+  } | null>(null);
+
+  const autoSelectMutation = useAutoSelectCharacters();
 
   if (!selectedStory) {
     return <Navigate to="/story/start" />;
   }
 
-  const hasRequiredCharacters = selectedCharacters.length === 10;
+  const hasRequiredCharacters =
+    selectedCharacters.length >= 10 && selectedCharacters.length <= 30;
 
   const handleCharacterConfirm = (characters: CharacterDto[]) => {
     setSelectedCharacters(characters);
+  };
+
+  const handleAutoSelect = async () => {
+    if (!selectedStory) return;
+
+    setIsAutoSelectModalOpen(true);
+    setAutoSelectResult(null);
+
+    try {
+      const result = await autoSelectMutation.mutateAsync({
+        title: selectedStory.title,
+        description: selectedStory.hidden_description,
+        plot: selectedStory.plot,
+      });
+
+      console.log(
+        `[StoryDetailPage] AI selected ${result.characters.length} characters`
+      );
+      setAutoSelectResult(result);
+    } catch (error) {
+      console.error("[StoryDetailPage] Auto-select failed:", error);
+      // Error is handled by the modal
+    }
+  };
+
+  const handleAutoSelectConfirm = () => {
+    if (autoSelectResult) {
+      // Use all AI-selected characters (already 10-15 from backend)
+      const charactersToUse = autoSelectResult.characters;
+      console.log(
+        `[StoryDetailPage] Using ${charactersToUse.length} AI-selected characters`
+      );
+      setSelectedCharacters(charactersToUse);
+      setIsAutoSelectModalOpen(false);
+      setAutoSelectResult(null);
+      autoSelectMutation.reset();
+    }
+  };
+
+  const handleAutoSelectCancel = () => {
+    setIsAutoSelectModalOpen(false);
+    setAutoSelectResult(null);
+    autoSelectMutation.reset();
+    // Open manual selection dialog after closing auto-select modal
+    setTimeout(() => {
+      setIsCharacterDialogOpen(true);
+    }, 100);
   };
 
   const handleStartAdventure = () => {
@@ -120,15 +178,31 @@ const StoryDetailPage = () => {
                 Adventure Party
               </h3>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setIsCharacterDialogOpen(true)}
-              className="font-poppins"
-            >
-              {hasRequiredCharacters
-                ? "Change Characters"
-                : "Select Characters"}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleAutoSelect}
+                disabled={
+                  autoSelectMutation.isPending ||
+                  isStartingAdventure ||
+                  isAutoSelectModalOpen
+                }
+                className="font-poppins text-base"
+              >
+                <Sparkles className="mr-2" size={16} />
+                Auto Select Characters
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setIsCharacterDialogOpen(true)}
+                disabled={isStartingAdventure || isAutoSelectModalOpen}
+                className="font-poppins text-base"
+              >
+                {hasRequiredCharacters
+                  ? "Change Characters"
+                  : "Select Characters"}
+              </Button>
+            </div>
           </div>
           <div className="text-sm font-poppins">
             {hasRequiredCharacters ? (
@@ -144,7 +218,8 @@ const StoryDetailPage = () => {
               </div>
             ) : (
               <p className="text-white/60">
-                You need to select 10 characters before starting the adventure.
+                You need to select 10-30 characters before starting the
+                adventure.
               </p>
             )}
           </div>
@@ -164,6 +239,11 @@ const StoryDetailPage = () => {
               ? "Starting Adventure..."
               : hasRequiredCharacters
               ? "Start Adventure"
+              : selectedCharacters.length > 0
+              ? `Select ${Math.max(
+                  0,
+                  10 - selectedCharacters.length
+                )} More Characters`
               : "Select Characters First"}
           </Button>
         </div>
@@ -174,6 +254,17 @@ const StoryDetailPage = () => {
         onOpenChange={setIsCharacterDialogOpen}
         selectedCharacters={selectedCharacters}
         onConfirm={handleCharacterConfirm}
+      />
+
+      <AutoSelectModal
+        open={isAutoSelectModalOpen}
+        isLoading={autoSelectMutation.isPending}
+        characters={autoSelectResult?.characters || null}
+        analysis={autoSelectResult?.analysis || null}
+        strategy={autoSelectResult?.strategy || null}
+        error={autoSelectMutation.error?.message || null}
+        onConfirm={handleAutoSelectConfirm}
+        onCancel={handleAutoSelectCancel}
       />
     </div>
   );

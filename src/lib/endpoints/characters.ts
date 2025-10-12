@@ -90,4 +90,22 @@ export const characterApi = {
     const res = await Request.delete<CharacterDto>(`/api/characters/${id}`);
     return res.data;
   },
+  async autoSelect(storyData: {
+    title: string;
+    description: string;
+    plot: string;
+  }) {
+    const res = await Request.post<{
+      characters: CharacterDto[];
+      analysis: Array<{
+        characterId: string;
+        characterName: string;
+        tacticalScore: number;
+        narrativeScore: number;
+        reasoning: string;
+      }>;
+      strategy: string;
+    }>("/api/characters/auto-select", storyData);
+    return res.data;
+  },
 };
