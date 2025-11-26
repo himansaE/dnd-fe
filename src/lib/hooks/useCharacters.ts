@@ -63,7 +63,9 @@ export function useUpdateCharacter() {
       data,
     }: {
       id: string;
-      data: Partial<Omit<CharacterDto, "id" | "createdAt" | "updatedAt">>;
+      data: Partial<Omit<CharacterDto, "id" | "createdAt" | "updatedAt">> & {
+        image?: File | null;
+      };
     }) => characterApi.update(id, data),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: characterKeys.detail(res.id) });
@@ -84,6 +86,19 @@ export function useDeleteCharacter() {
     },
     onError: (err) => {
       console.error(err);
+    },
+  });
+}
+
+export function useAutoSelectCharacters() {
+  return useMutation({
+    mutationFn: (storyData: {
+      title: string;
+      description: string;
+      plot: string;
+    }) => characterApi.autoSelect(storyData),
+    onError: (err) => {
+      console.error("Auto-select failed:", err);
     },
   });
 }

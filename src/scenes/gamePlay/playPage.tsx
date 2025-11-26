@@ -9,6 +9,7 @@ import { storyService } from "@/lib/storyStore";
 
 export const PlayScenePage = () => {
   const selectedStory = useStoryStore((state) => state.selectedStory);
+  const selectedCharacters = useStoryStore((state) => state.selectedCharacters);
   const setStoryStartData = useStoryStore((state) => state.setStoryStartData);
   // const currentScene = useStoryStore((state) => state.currentScene);
   // const characters = useStoryStore((state) => state.characters);
@@ -18,6 +19,7 @@ export const PlayScenePage = () => {
       hidden_description: selectedStory?.hidden_description,
       title: selectedStory?.title,
       plot: selectedStory?.plot,
+      characterIds: selectedCharacters.map((c) => c.id),
     });
 
   useEffect(() => {
@@ -39,6 +41,8 @@ export const PlayScenePage = () => {
   }, [storyStartData, setStoryStartData]);
 
   if (!selectedStory) return <Navigate to="/story/start" />;
+  if (selectedCharacters.length < 10 || selectedCharacters.length > 30)
+    return <Navigate to="/story/detail" />;
 
   if (isStoryStartLoading || !storyStartData) return <LoadingScene />;
 

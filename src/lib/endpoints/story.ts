@@ -20,6 +20,7 @@ export interface NarratorContent {
 
 export interface CharacterContent {
   type: "character";
+  characterId?: string; // Character UUID from database
   name: string;
   dialogue: string;
 }
@@ -34,6 +35,7 @@ export interface ChoiceItem {
 export interface SingleSegmentOutput {
   narrative_content: NarrativeContentItem[];
   choices: ChoiceItem[];
+  soundtrack?: Soundtrack;
 }
 
 export interface InitialSegmentOutput extends SingleSegmentOutput {
@@ -41,9 +43,23 @@ export interface InitialSegmentOutput extends SingleSegmentOutput {
   start_segment_id: string;
 }
 
+export type Soundtrack = {
+  track_id: string;
+  prompt?: string;
+  reason?: string;
+};
+
+export interface MusicTrack {
+  id: string;
+  prompt: string;
+  mood?: string;
+  tags?: string[];
+}
+
 export interface StoryGraph {
   story_title?: string;
   start_segment_id: string;
+  music_tracks?: Record<string, MusicTrack>;
   segments: {
     [segmentId: string]: SingleSegmentOutput;
   };
@@ -55,15 +71,17 @@ export interface StoryStartRes {
 }
 
 export const startScene = async (
-  story: Omit<storyGeneratorRes, "card_background">
+  story: Omit<storyGeneratorRes, "card_background">,
+  characterIds: string[]
 ) => {
   const res = await Request<StoryStartRes>({
-    method: "get",
+    method: "post",
     url: "/api/story/start-scene",
-    params: {
+    data: {
       title: story.title,
       plot: story.plot,
       description: story.hidden_description,
+      characterIds,
     },
   });
 

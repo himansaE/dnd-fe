@@ -182,6 +182,45 @@
   .custom-scrollbar::-webkit-scrollbar-corner {
     background: transparent;
   }
+
+  /* Game-themed scrollbar for characters page */
+  .scrollbar-custom {
+    scrollbar-width: thin;
+    scrollbar-color: #9361b0 rgba(0, 0, 0, 0.4);
+  }
+
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 10px;
+    margin: 8px 0;
+    border: 1px solid rgba(147, 97, 176, 0.3);
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #a15ad0 0%, #9361b0 50%, #683b82 100%);
+    border-radius: 10px;
+    border: 2px solid rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2);
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #b87ae0 0%, #a15ad0 50%, #7a4b92 100%);
+    box-shadow: 0 0 8px rgba(161, 90, 208, 0.6),
+      inset 0 1px 2px rgba(255, 255, 255, 0.3);
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb:active {
+    background: linear-gradient(180deg, #8e4bb8 0%, #7a3b9e 50%, #5a2b72 100%);
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
   .font-outline-2 {
     -webkit-text-stroke: 2px black;
   }
