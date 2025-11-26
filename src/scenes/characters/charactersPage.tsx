@@ -1,5 +1,6 @@
 import Backdrop from "@/assets/images/game-backdrop.webp";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +73,7 @@ const ABILITY_OPTIONS = [
 ];
 
 export default function CharactersPage() {
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [editing, setEditing] = useState<CharacterDto | null>(null);
   const [open, setOpen] = useState(false);
@@ -268,9 +270,19 @@ export default function CharactersPage() {
       )}
       <div className="w-full max-w-7/9 px-20 pt-8 pb-6 font-poppins grid grid-rows-[100px_1fr] h-screen">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl text-white font-bold font-ruslan">
-            Characters
-          </h1>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="hover:bg-transparent"
+            >
+              <ChevronLeft className="size-8 text-white" />
+            </Button>
+            <h1 className="text-4xl text-white font-bold font-ruslan">
+              Characters
+            </h1>
+          </div>
           <Dialog open={open} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
               <Button

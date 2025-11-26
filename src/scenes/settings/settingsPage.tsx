@@ -20,7 +20,11 @@ const SettingsItem = ({ title, component }: SettingsItemProps) => {
   );
 };
 
-export const SettingsPage = () => {
+type SettingsPageProps = {
+  onBack?: () => void;
+};
+
+export const SettingsPage = ({ onBack }: SettingsPageProps) => {
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
 
@@ -56,6 +60,17 @@ export const SettingsPage = () => {
 
     saveSettings(localSettings);
 
+    // Apply full screen setting
+    if (localSettings.isFullScreen) {
+      if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen && document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+    }
+
     setTimeout(() => {
       setIsSaving(false);
     }, 500);
@@ -63,14 +78,6 @@ export const SettingsPage = () => {
 
   const toggleFullScreen = (checked: boolean) => {
     setLocalSettings({ ...localSettings, isFullScreen: checked });
-
-    if (checked) {
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen();
-      }
-    } else if (document.exitFullscreen && document.fullscreenElement) {
-      document.exitFullscreen();
-    }
   };
 
   return (
@@ -155,7 +162,7 @@ export const SettingsPage = () => {
           <Button
             variant="outline"
             className="px-10"
-            onClick={() => navigate(-1)}
+            onClick={() => (onBack ? onBack() : navigate(-1))}
           >
             Back
           </Button>

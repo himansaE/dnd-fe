@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ChoiceItem } from "@/lib/endpoints/story";
+import { useSettingsStore } from "@/stores/settingsStore";
 
 type OptionDialogProps = {
   isOpen: boolean;
@@ -16,10 +17,18 @@ type OptionDialogProps = {
 };
 
 export const OptionDialog = (props: OptionDialogProps) => {
+  const { textSize, chatBarTransparency } = useSettingsStore();
+
+  const fontSize = `${0.8 + (textSize / 100) * 0.7}rem`;
+  const opacity = 1 - chatBarTransparency / 100;
+
   return (
-    <Dialog open={props.isOpen} onOpenChange={() => {}}>
+    <Dialog open={props.isOpen} onOpenChange={() => { }}>
       <DialogContent
-        className="sm:max-w-2xl bg-[#22102E]/70 border border-[#9361B0] rounded-2xl px-16 py-14"
+        className="sm:max-w-2xl border border-[#9361B0] rounded-2xl px-16 py-14"
+        style={{
+          backgroundColor: `rgba(34, 16, 46, ${opacity})`,
+        }}
         hideCloseButton
       >
         <DialogHeader className="hidden">
@@ -32,6 +41,7 @@ export const OptionDialog = (props: OptionDialogProps) => {
               key={index}
               onClick={() => props.onSelect(option.next_segment_id)}
               className="max-w-3xl whitespace-break-spaces h-auto block leading-normal"
+              style={{ fontSize }}
               disabled={props.disabled}
             >
               {option.text}

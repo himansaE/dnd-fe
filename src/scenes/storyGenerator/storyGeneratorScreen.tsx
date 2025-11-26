@@ -2,7 +2,7 @@ import { storyGeneratorRes } from "@/lib/endpoints/storyGenarator";
 import Backdrop from "@/assets/images/game-backdrop.webp";
 import { Button } from "@/components/ui/button";
 import { cn, getBucketUrl } from "@/lib/utils";
-import { RefreshCcw } from "lucide-react";
+import { RefreshCcw, ChevronLeft } from "lucide-react";
 import { useStoryStore } from "@/stores/storyStore";
 import { useNavigate } from "react-router";
 
@@ -34,6 +34,16 @@ export const StoryGeneratorScreen = (props: StoryGeneratorScreenProps) => {
         backgroundPosition: "center",
       }}
     >
+      <div className="absolute top-8 left-8 z-50">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/")}
+          className="hover:bg-transparent"
+        >
+          <ChevronLeft className="size-8 text-white" />
+        </Button>
+      </div>
       {props.isRefreshing && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 bg-opacity-50 z-50 backdrop-blur-xl transition ">
           <div className="p-4 bg-black/40 rounded-full animate-spin">

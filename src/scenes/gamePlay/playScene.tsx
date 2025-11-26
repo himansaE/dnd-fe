@@ -12,6 +12,7 @@ import { useContinueStory } from "@/lib/hooks/useContinueStory";
 import { useStoryStore } from "@/stores/storyStore";
 import { findCharacterMatch } from "@/lib/utils/characterMatching";
 import { useLyriaMusic } from "@/lib/hooks/useLyriaMusic";
+import { PauseMenu } from "./pauseMenu";
 
 type PlaySceneProps = {
   story: StoryGraph;
@@ -24,6 +25,7 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
   );
   const [narrativeIndex, setNarrativeIndex] = useState(0);
   const [showChoices, setShowChoices] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   // Music Service
   const { updateMood } = useLyriaMusic();
@@ -120,8 +122,19 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
     });
   }, [selectedCharacters]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsPaused((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const onNextCLick = () => {
-    if (showChoices || isLoading) return;
+    if (showChoices || isLoading || isPaused) return;
     if (narrativeIndex < loadedSegments.narrative_content.length - 1) {
       setNarrativeIndex(narrativeIndex + 1);
     } else {
@@ -238,6 +251,8 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
         options={loadedSegments.choices}
         disabled={isLoading}
       />
+
+      {isPaused && <PauseMenu onResume={() => setIsPaused(false)} />}
     </div>
   );
 };
