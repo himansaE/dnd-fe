@@ -1,12 +1,17 @@
 import Backdrop from "@/assets/images/play-backdrop.png";
 import { ChatDialogWindow } from "./dialogWindow";
 import { useEffect, useState, useMemo } from "react";
-import { SingleSegmentOutput, StoryGraph } from "@/lib/endpoints/story";
+import {
+  MusicTrack,
+  SingleSegmentOutput,
+  StoryGraph,
+} from "@/lib/endpoints/story";
 import { OptionDialog } from "./optionDialog";
 import { storyService } from "@/lib/storyStore";
 import { useContinueStory } from "@/lib/hooks/useContinueStory";
 import { useStoryStore } from "@/stores/storyStore";
 import { findCharacterMatch } from "@/lib/utils/characterMatching";
+import { useLyriaMusic } from "@/lib/hooks/useLyriaMusic";
 
 type PlaySceneProps = {
   story: StoryGraph;
@@ -19,6 +24,18 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
   );
   const [narrativeIndex, setNarrativeIndex] = useState(0);
   const [showChoices, setShowChoices] = useState(false);
+
+  // Music Service
+  const { updateMood } = useLyriaMusic();
+  const musicTracks: Record<string, MusicTrack> | undefined =
+    story.music_tracks;
+
+  const resolveTrackPrompt = (trackId?: string, directPrompt?: string) => {
+    if (directPrompt) return directPrompt;
+    if (!trackId || !musicTracks) return null;
+    const track = musicTracks[trackId];
+    return track?.prompt ?? null;
+  };
 
   // Get story continuation functionality
   const continueStoryMutation = useContinueStory();
@@ -63,6 +80,14 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
   useEffect(() => {
     storyService.setFlowHistory([story.start_segment_id]);
     storyService.addSegmentToHistory(story.start_segment_id);
+
+    const startSegment = story.segments[story.start_segment_id];
+    const st = startSegment?.soundtrack;
+    const prompt = st ? resolveTrackPrompt(st.track_id, st.prompt) : null;
+    if (st?.action === "CHANGE" && prompt) {
+      console.log("[PlayScene] Initial music update:", prompt);
+      updateMood(prompt);
+    }
   }, [story.start_segment_id]);
 
   // Preload character images on mount
@@ -121,6 +146,12 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
         // Now we can proceed to load the segment
         const newSegment = result.segments[option];
         if (newSegment) {
+          const st = newSegment.soundtrack;
+          const prompt = st ? resolveTrackPrompt(st.track_id, st.prompt) : null;
+          if (st?.action === "CHANGE" && prompt) {
+            console.log("[PlayScene] Music update (segment-level):", prompt);
+            updateMood(prompt);
+          }
           storyService.addSegmentToHistory(option);
           storyService.addFlowStep(option);
           setLoadedSegments(newSegment);
@@ -156,6 +187,13 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
       }
     } else {
       // Segment already loaded locally
+      const st = isSegmentLoaded.soundtrack;
+      const prompt = st ? resolveTrackPrompt(st.track_id, st.prompt) : null;
+      if (st?.action === "CHANGE" && prompt) {
+        console.log("[PlayScene] Music update (cached segment):", prompt);
+        updateMood(prompt);
+      }
+
       storyService.addSegmentToHistory(option);
       storyService.addFlowStep(option);
       setLoadedSegments(isSegmentLoaded);

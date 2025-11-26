@@ -35,6 +35,7 @@ export interface ChoiceItem {
 export interface SingleSegmentOutput {
   narrative_content: NarrativeContentItem[];
   choices: ChoiceItem[];
+  soundtrack?: Soundtrack;
 }
 
 export interface InitialSegmentOutput extends SingleSegmentOutput {
@@ -42,9 +43,23 @@ export interface InitialSegmentOutput extends SingleSegmentOutput {
   start_segment_id: string;
 }
 
+export type Soundtrack = {
+  track_id: string;
+  prompt?: string;
+  reason?: string;
+};
+
+export interface MusicTrack {
+  id: string;
+  prompt: string;
+  mood?: string;
+  tags?: string[];
+}
+
 export interface StoryGraph {
   story_title?: string;
   start_segment_id: string;
+  music_tracks?: Record<string, MusicTrack>;
   segments: {
     [segmentId: string]: SingleSegmentOutput;
   };
