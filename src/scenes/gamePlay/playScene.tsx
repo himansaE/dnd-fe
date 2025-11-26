@@ -27,15 +27,10 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
 
   // Music Service
   const { updateMood } = useLyriaMusic();
-  const musicTracks: Record<string, MusicTrack> | undefined =
-    story.music_tracks;
-
-  const resolveTrackPrompt = (trackId?: string, directPrompt?: string) => {
-    if (directPrompt) return directPrompt;
-    if (!trackId || !musicTracks) return null;
-    const track = musicTracks[trackId];
-    return track?.prompt ?? null;
-  };
+  const [musicTracks, setMusicTracks] = useState<Record<string, MusicTrack>>(
+    story.music_tracks || {}
+  );
+  const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
 
   // Get story continuation functionality
   const continueStoryMutation = useContinueStory();
@@ -80,15 +75,39 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
   useEffect(() => {
     storyService.setFlowHistory([story.start_segment_id]);
     storyService.addSegmentToHistory(story.start_segment_id);
-
-    const startSegment = story.segments[story.start_segment_id];
-    const st = startSegment?.soundtrack;
-    const prompt = st ? resolveTrackPrompt(st.track_id, st.prompt) : null;
-    if (st?.action === "CHANGE" && prompt) {
-      console.log("[PlayScene] Initial music update:", prompt);
-      updateMood(prompt);
-    }
   }, [story.start_segment_id]);
+
+  // Centralized music management effect
+  useEffect(() => {
+    const st = loadedSegments.soundtrack;
+    if (!st) return;
+
+    const trackId = st.track_id;
+
+    // If we have a track ID and it's different from the current one
+    if (trackId && trackId !== currentTrackId) {
+      const track = musicTracks[trackId];
+      if (track) {
+        console.log(`[PlayScene] Switching track to ${trackId}:`, track.prompt);
+        updateMood(track.prompt);
+        setCurrentTrackId(trackId);
+      } else {
+        console.warn(`[PlayScene] Track ${trackId} not found in musicTracks`);
+        // Fallback: if direct prompt exists in soundtrack, use it
+        if (st.prompt) {
+          console.log(`[PlayScene] Using fallback prompt for ${trackId}`);
+          updateMood(st.prompt);
+          setCurrentTrackId(trackId);
+        }
+      }
+    } else if (!trackId && st.prompt && st.prompt !== currentTrackId) {
+      // Handle legacy/fallback case where only prompt is provided
+      // We use the prompt itself as the ID to avoid re-triggering if it's the same string
+      console.log(`[PlayScene] Using direct prompt`);
+      updateMood(st.prompt);
+      setCurrentTrackId(st.prompt);
+    }
+  }, [loadedSegments, musicTracks, currentTrackId, updateMood]);
 
   // Preload character images on mount
   useEffect(() => {
@@ -142,16 +161,15 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
           nextSegmentId: option,
         });
 
+        // Update music tracks if new ones are provided
+        if (result.music_tracks) {
+          setMusicTracks((prev) => ({ ...prev, ...result.music_tracks }));
+        }
+
         // After successful API call, the new segments are automatically added to storyService
         // Now we can proceed to load the segment
         const newSegment = result.segments[option];
         if (newSegment) {
-          const st = newSegment.soundtrack;
-          const prompt = st ? resolveTrackPrompt(st.track_id, st.prompt) : null;
-          if (st?.action === "CHANGE" && prompt) {
-            console.log("[PlayScene] Music update (segment-level):", prompt);
-            updateMood(prompt);
-          }
           storyService.addSegmentToHistory(option);
           storyService.addFlowStep(option);
           setLoadedSegments(newSegment);
@@ -179,21 +197,13 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
         console.error("Failed to continue story:", error);
         // If there's an error, show an alert and show choices again
         alert(
-          `Failed to continue the story: ${
-            error instanceof Error ? error.message : "Unknown error"
+          `Failed to continue the story: ${error instanceof Error ? error.message : "Unknown error"
           }. Please try again.`
         );
         setShowChoices(true);
       }
     } else {
       // Segment already loaded locally
-      const st = isSegmentLoaded.soundtrack;
-      const prompt = st ? resolveTrackPrompt(st.track_id, st.prompt) : null;
-      if (st?.action === "CHANGE" && prompt) {
-        console.log("[PlayScene] Music update (cached segment):", prompt);
-        updateMood(prompt);
-      }
-
       storyService.addSegmentToHistory(option);
       storyService.addFlowStep(option);
       setLoadedSegments(isSegmentLoaded);
