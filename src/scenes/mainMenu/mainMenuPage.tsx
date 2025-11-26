@@ -20,11 +20,6 @@ export const MainMenuPage = () => {
       action: () => navigate("/characters"),
     },
     {
-      label: "Load Game",
-      action: () => console.log("Load Game"),
-      disabled: true,
-    },
-    {
       label: "Settings",
       action: () => navigate("/settings"),
     },
@@ -70,7 +65,6 @@ export const MainMenuPage = () => {
               className="w-72 pt-4 pb-3 h-auto hover:scale-105 active:scale-95 hover:brightness-110 active:brightness-90 transition-all duration-300 ease-in-out text-3xl rounded-xl
               "
               onClick={option.action}
-              disabled={option.disabled}
             >
               {option.label}
             </Button>

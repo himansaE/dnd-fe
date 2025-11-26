@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import Request from "@/lib/http";
 import { normalizeSegmentsMap } from "@/lib/utils";
-import { SingleSegmentOutput } from "../endpoints/story";
+import { MusicTrack, SingleSegmentOutput } from "../endpoints/story";
 import { storyService } from "../storyStore";
 
 // API request structure based on documentation
@@ -20,6 +20,7 @@ interface ContinueStoryResponse {
   segments: {
     [segmentId: string]: SingleSegmentOutput;
   };
+  music_tracks?: Record<string, MusicTrack>;
   success: boolean;
 }
 
