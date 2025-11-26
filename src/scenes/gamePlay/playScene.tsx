@@ -197,8 +197,7 @@ export const PlayScene = ({ story }: PlaySceneProps) => {
         console.error("Failed to continue story:", error);
         // If there's an error, show an alert and show choices again
         alert(
-          `Failed to continue the story: ${
-            error instanceof Error ? error.message : "Unknown error"
+          `Failed to continue the story: ${error instanceof Error ? error.message : "Unknown error"
           }. Please try again.`
         );
         setShowChoices(true);
